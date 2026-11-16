@@ -17,3 +17,5 @@ function criptografarCpf(cpf) {
 
 console.log("Hash da senha 123456: ", gerarHashSenha("123456"));
 console.log("Hash do cpf 11122233344: ", criptografarCpf("11122233344"));
+console.log("Hash do cpf 22233344455: ", criptografarCpf("22233344455"));
+console.log("Hash do cpf 33344455566: ", criptografarCpf("33344455566"));

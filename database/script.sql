@@ -32,4 +32,24 @@ CREATE TABLE agendamentos (
     data_agendamento DATETIME NOT NULL,
     servico VARCHAR(100),
     FOREIGN KEY (veiculo_id) REFERENCES veiculos(id)
-)
+);
+
+INSERT INTO usuarios (nome, email, senha) VALUES
+("Administrador", "admin@oficina.com", "$2b$10$RLJXYpsTA/Y8WdDAV/Awxu1Bot2G6jFVpHQ06M3cph9puBeFEkB0q"),
+("Carlos Mecânico", "carlos@oficina.com", "$2b$10$RLJXYpsTA/Y8WdDAV/Awxu1Bot2G6jFVpHQ06M3cph9puBeFEkB0q"),
+("Fernanda Atendente", "fernanda@oficina.com", "$2b$10$RLJXYpsTA/Y8WdDAV/Awxu1Bot2G6jFVpHQ06M3cph9puBeFEkB0q");
+
+INSERT INTO clientes (nome, cpf, telefone, email) VALUES
+("João da Silva", "b9332f3140efaf757e4d684975ef3365", "(11)95729-0221", "joao.silva@email.com"),
+("Maria Souza", "be4f639df4cd927594a5e3084b540dc1", "(11)95101-6804", "maria.souza@email.com"),
+("Pedro Oliveira", "65eea67226931d6bc95e431330183923", "(11)97376-9638", "pedro.oliveira@email.com");
+
+INSERT INTO veiculos (cliente_id, placa, marca, modelo, ano) VALUES 
+(1, "ABC1D23", "Volkswagen", "Gol", 2018),
+(2, "DEF4E56", "Fiat", "Uno", 1997),
+(3, "GHI7F89", "Chevrolet", "Onix", 2021);
+
+INSERT INTO agendamentos (veiculo_id, data_agendamento, servico) VALUES
+(2, "2026-11-05 09:00:00", "Troca de Óleo"),
+(1, "2026-10-20 14:30:00", "Alinhamento e Balanceamento"),
+(3, "2026-10-28 08:00:00", "Revisão dos Freios");
