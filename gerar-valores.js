@@ -1,0 +1,19 @@
+require("dotenv").config();
+const bcrypt = require("bcryptjs");
+const crypto = require("crypto");
+
+function gerarHashSenha(senha) {
+  return bcrypt.hashSync(senha, 10);
+}
+
+function criptografarCpf(cpf) {
+  const cifra = crypto.createCipheriv(
+    "aes-256-cbc",
+    process.env.CRIPTO_CHAVE,
+    process.env.CRIPTO_IV,
+  );
+  return cifra.update(cpf, "utf-8", "hex") + cifra.final("hex");
+}
+
+console.log("Hash da senha 123456: ", gerarHashSenha("123456"));
+console.log("Hash do cpf 11122233344: ", criptografarCpf("11122233344"));
