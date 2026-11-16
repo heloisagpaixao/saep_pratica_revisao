@@ -52,6 +52,50 @@ function descriptografar(texto) {
   return decifra.update(texto, "hex", "utf-8") + decifra.final("utf-8");
 }
 
+async function excluir(res, tabela, id, volta, motivo) {
+  try {
+    await db.query(`DELETE FROM ${tabela} WHERE id = ?`, [id]);
+    res.redirect(volta);
+  } catch (erro) {
+    if (erro.code === "ER_ROW_IS_REFERENCED_2") {
+      return res
+        .status(409)
+        .send(
+          `<p> Não foi possível excluir: ${motivo} </p> <p><a href="${volta}"> Voltar </a> </p>`,
+        );
+    }
+    console.error(erro);
+    res
+      .status(500)
+      .send(
+        `<p> Erro ao excluir. </p> <p><a href="${volta}"> Voltar </a> </p>`,
+      );
+  }
+}
+
+async function mostrarVeiculos(req, res, erro = "") {
+  const [veiculos] = await db.query("SELECT * FROM veiculos");
+  const [listaClientes] = await db.query("SELECT id, nome FROM clientes");
+  const editar = veiculos.find((v) => String(v.id) === req.query.editar);
+
+  const clientes = listaClientes.map((cliente) => ({
+    ...cliente,
+    selecionado: editar && cliente.id === editar.cliente_id ? "selected" : "",
+  }));
+
+  res.send(
+    mostrar("veiculos", {
+      veiculos,
+      clientes,
+      erro,
+      editando: Boolean(editar),
+      acao: editar ? `/veiculos/${editar.id}` : "/veiculos",
+      form: editar || {},
+    }),
+  );
+}
+
+// =================================== LOGIN =================================== //
 app.get("/", (req, res) => res.send(mostrar("login")));
 app.post("/login", async (req, res) => {
   const { email, senha } = req.body;
@@ -78,7 +122,89 @@ app.post("/sair", (req, res) => {
   res.redirect("/");
 });
 
-// SEMPRE POR ÚLTIMO
+app.use((req, res, next) => {
+  try {
+    req.usuario = jwt.verify(req.cookies.token, process.env.JWT_SECRET);
+    next();
+  } catch (erro) {
+    res.redirect("/");
+  }
+});
+
+app.get("/principal", (req, res) =>
+  res.send(mostrar("principal", { nome: req.usuario.nome })),
+);
+
+// =================================== CLIENTES =================================== //
+app.get("/clientes", async (req, res) => {
+  const busca = req.query.busca || "";
+  const [lista] = await db.query("SELECT * FROM clientes WHERE nome LIKE ?", [
+    `%${busca}%`,
+  ]);
+  const clientes = lista.map((cliente) => ({
+    ...cliente,
+    cpf: descriptografar(cliente.cpf),
+  }));
+
+  const editar = clientes.find(
+    (cliente) => String(cliente.id) === req.query.editar,
+  );
+
+  res.send(
+    mostrar("clientes", {
+      busca,
+      clientes,
+      editando: Boolean(editar),
+      acao: editar ? `/clientes/${editar.id}` : "/clientes",
+      form: editar || {},
+    }),
+  );
+});
+
+app.post("/clientes", async (req, res) => {
+  const { nome, cpf, telefone, email } = req.body;
+  await db.query(
+    "INSERT INTO clientes (nome, cpf, telefone, email) VALUES (?, ?, ?, ?)",
+    [nome, criptografar(cpf), telefone, email],
+  );
+  res.redirect("/clientes");
+});
+
+app.put("/clientes/:id", async (req, res) => {
+  const { nome, cpf, telefone, email } = req.body;
+  await db.query(
+    "UPDATE clientes SET nome = ?, cpf = ?, telefone = ?, email = ? WHERE id = ?",
+    [nome, criptografar(cpf), telefone, email, req.params.id],
+  );
+  res.redirect("/clientes");
+});
+
+app.delete("/clientes/:id", async (req, res) => {
+  await excluir(
+    res,
+    "clientes",
+    req.params.id,
+    "/clientes",
+    "O cliente já possuí veículos cadastrados.",
+  );
+});
+
+// =================================== VEÍCULOS =================================== //
+app.get("/veiculos", (req, res) => mostrarVeiculos(req, res));
+
+app.post("/veiculos", async (req, res) => {
+  const { cliente_id, placa, marca, modelo, ano } = req.body;
+  if (!cliente_id) {
+    return mostrarVeiculos(req, res, "Cliente ID é obrigatório.");
+  }
+  await db.query(
+    "INSERT INTO veiculos (cliente_id, placa, marca, modelo, ano) VALUES (?, ?, ?, ?, ?)",
+    [cliente_id, placa, marca, modelo, ano || null],
+  );
+  res.redirect("/veiculos");
+});
+
+// =================================== BANCO DE DADOS =================================== //
 const porta = process.env.PORT || 3000;
 app.listen(porta, () =>
   console.log(`Oficina rodando em http://localhost:${porta}`),
