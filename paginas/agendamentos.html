@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="pt-br">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Oficina - Agendamentos</title>
+  </head>
+  <body>
+    <h1>Agendamentos</h1>
+    <p><a href="/principal"> Voltar </a></p>
+
+    <table border="1">
+      <tr>
+        <th>Data do Agendamento</th>
+        <th>Serviço</th>
+        <th>Veículo</th>
+        <th>Cliente</th>
+        <th>Alterar Data</th>
+      </tr>
+      {{#agendamentos}}
+      <tr>
+        <td>{{data_br}}</td>
+        <td>{{servico}}</td>
+        <td>{{placa}}</td>
+        <td>{{cliente_nome}}</td>
+        <td>
+          <form method="POST" action="/agendamentos/{{id}}">
+            <input type="hidden" name="_method" value="PUT" />
+
+            <input
+              type="datetime-local"
+              name="data_agendamento"
+              value="{{data_input}}"
+              required
+            />
+
+            <button>Salvar</button>
+          </form>
+
+          <form method="POST" action="/agendamentos/{{id}}">
+            <input type="hidden" name="_method" value="DELETE" />
+
+            <button>Excluir</button>
+          </form>
+        </td>
+      </tr>
+      {{/agendamentos}}
+    </table>
+
+    <h2>Cadastrar agendamento</h2>
+    <form method="POST" action="/agendamentos">
+      <select name="veiculo_id" required>
+        <option value="">Selecione o veículo...</option>
+        {{#veiculos}}
+        <option value="{{id}}">{{placa}} - {{marca}} {{modelo}}</option>
+        {{/veiculos}}
+      </select>
+
+      <input type="datetime-local" name="data_agendamento" required />
+      <input
+        type="text"
+        name="servico"
+        placeholder="Serviço que será efetuado"
+      />
+
+      <button>Cadastrar</button>
+    </form>
+    <p>{{erro}}</p>
+  </body>
+</html>

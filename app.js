@@ -29,6 +29,8 @@ const db = mysql.createPool({
   dateStrings: true,
 });
 
+// =================================== FUNÇÕES INICIAIS =================================== //
+
 function mostrar(nome, dados = {}) {
   const arquivo = path.join(__dirname, "paginas", `${nome}.html`);
   return Mustache.render(fs.readFileSync(arquivo, "utf-8"), dados);
@@ -203,6 +205,67 @@ app.post("/veiculos", async (req, res) => {
   );
   res.redirect("/veiculos");
 });
+
+app.put("/veiculos/:id", async (req, res) => {
+  const { cliente_id, placa, marca, modelo, ano } = req.body;
+
+  if (!cliente_id)
+    return mostrarVeiculos(req, res, "ID do cliente é obrigatório.");
+
+  await db.query(
+    "UPDATE veiculos SET cliente_id = ?, placa = ?, marca = ?, modelo = ?, ano = ? WHERE id = ?",
+    [cliente_id, placa, marca, modelo, ano || null, req.params.id],
+  );
+  res.redirect("/veiculos");
+});
+
+app.delete("/veiculos/:id", async (req, res) => {
+  await excluir(
+    res,
+    "veiculos",
+    req.params.id,
+    "/veiculos",
+    "O veículo possui agendamentos.",
+  );
+});
+
+// =================================== AGENDAMENTOS =================================== //
+app.get("/agendamentos", async (req, res) => {
+  const [lista] = await db.query(
+    "SELECT agendamentos.*, veiculos.placa, veiculos.marca, veiculos.modelo, clientes.nome AS cliente_nome FROM agendamentos JOIN veiculos ON veiculos.id = agendamentos.veiculo_id JOIN clientes ON clientes.id = veiculos.cliente_id ORDER BY agendamentos.data_agendamento",
+  );
+
+  const [veiculos] = await db.query("SELECT * FROM veiculos");
+
+  const agendamentos = lista.map((a) => ({
+    ...a,
+    data_br: new Date(a.data_agendamento).toLocaleString("pt-BR"),
+    data_input: a.data_agendamento.slice(0, 16).replace(" ", "T"),
+  }));
+  res.send(mostrar("agendamentos", { agendamentos, veiculos }));
+});
+
+app.post("/agendamentos", async (req, res) => {
+  const { veiculo_id, data_agendamento, servico } = req.body;
+
+  await db.query(
+    "INSERT INTO agendamentos (veiculo_id, data_agendamento, servico) VALUES (?, ?, ?)",
+    [veiculo_id, data_agendamento.replace("T", " "), servico],
+  );
+  res.redirect("/agendamentos");
+});
+
+app.put("/agendamentos/:id", async (req, res) => {
+  await db.query("UPDATE agendamentos SET data_agendamento = ? WHERE id = ?", [
+    req.body.data_agendamento.replace("T", " "),
+    req.params.id,
+  ]);
+  res.redirect("/agendamentos");
+});
+
+app.delete("/agendamentos/:id", async (req, res) => {
+  await excluir(res, "agendamentos", req.params.id, "/agendamentos", " ")
+})
 
 // =================================== BANCO DE DADOS =================================== //
 const porta = process.env.PORT || 3000;
