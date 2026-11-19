@@ -30,7 +30,6 @@ const db = mysql.createPool({
 });
 
 // =================================== FUNÇÕES INICIAIS =================================== //
-
 function mostrar(nome, dados = {}) {
   const arquivo = path.join(__dirname, "paginas", `${nome}.html`);
   return Mustache.render(fs.readFileSync(arquivo, "utf-8"), dados);
